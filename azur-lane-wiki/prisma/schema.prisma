@@ -1,0 +1,372 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Ships/Characters
+model Ship {
+  id                String   @id @default(cuid())
+  name              String   @unique
+  faction           String
+  shipType          String
+  rarity            String
+  hullType          String
+  
+  // Base Stats (Level 1)
+  healthBase        Int
+  armorBase         Int
+  reloadBase        Int
+  firepowerBase     Int
+  torpedoBase       Int
+  evasionBase       Int
+  speedBase         Int
+  antiAirBase       Int
+  aviationBase      Int
+  oilConsumptionBase Int
+  accuracyBase      Int
+  luckBase          Int
+  antiSubBase       Int
+  
+  // Max Stats (Level 120)
+  healthMax         Int
+  armorMax          Int
+  reloadMax         Int
+  firepowerMax      Int
+  torpedoMax        Int
+  evasionMax        Int
+  speedMax          Int
+  antiAirMax        Int
+  aviationMax       Int
+  oilConsumptionMax Int
+  accuracyMax       Int
+  luckMax           Int
+  antiSubMax        Int
+  
+  // Additional Stats
+  healthLevel125    Int?
+  armorLevel125     Int?
+  
+  // Affection and Oath bonuses
+  affectionHealthBonus    Int     @default(0)
+  affectionReloadBonus    Int     @default(0)
+  oathHealthBonus         Int     @default(0)
+  oathReloadBonus         Int     @default(0)
+  
+  // Retrofit Info
+  canRetrofit      Boolean  @default(false)
+  retrofitName     String?
+  
+  // Images and Assets
+  imageUrl         String?
+  chibiUrl         String?
+  iconUrl          String?
+  
+  // Relationships
+  skills           Skill[]
+  skins            Skin[]
+  tierRatings      TierRating[]
+  buildRecommendations BuildRecommendation[]
+  voiceLines       VoiceLine[]
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+// Skills
+model Skill {
+  id           String @id @default(cuid())
+  name         String
+  description  String
+  skillType    String // "barrage", "buff", "special", etc.
+  cooldown     Int?
+  
+  // Skill levels (typically 1-10)
+  maxLevel     Int    @default(10)
+  
+  ship         Ship   @relation(fields: [shipId], references: [id])
+  shipId       String
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Equipment
+model Equipment {
+  id               String @id @default(cuid())
+  name             String @unique
+  category         String // "Main Gun", "Secondary Gun", "Torpedo", etc.
+  rarity           String
+  techType         String // "Normal", "Eagle Union", etc.
+  
+  // Base Stats
+  healthBase       Int    @default(0)
+  firepowerBase    Int    @default(0)
+  torpedoBase      Int    @default(0)
+  antiAirBase      Int    @default(0)
+  aviationBase     Int    @default(0)
+  reloadBase       Int    @default(0)
+  hitBase          Int    @default(0)
+  evasionBase      Int    @default(0)
+  accuracyBase     Int    @default(0)
+  luckBase         Int    @default(0)
+  antiSubBase      Int    @default(0)
+  
+  // Max Enhancement Stats (+10/+13)
+  healthMax        Int    @default(0)
+  firepowerMax     Int    @default(0)
+  torpedoMax       Int    @default(0)
+  antiAirMax       Int    @default(0)
+  aviationMax      Int    @default(0)
+  reloadMax        Int    @default(0)
+  hitMax           Int    @default(0)
+  evasionMax       Int    @default(0)
+  accuracyMax      Int    @default(0)
+  luckMax          Int    @default(0)
+  antiSubMax       Int    @default(0)
+  
+  // Damage and Combat
+  damage           Json?  // Complex damage calculations
+  armorModifiers   Json?  // Effectiveness against armor types
+  
+  // Acquisition
+  acquisition      String[]
+  blueprintSource  String[]
+  
+  // Compatibility
+  compatibleShipTypes String[]
+  
+  // Images
+  imageUrl         String?
+  iconUrl          String?
+  
+  // Relationships
+  tierRatings      EquipmentTierRating[]
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+// Tier Ratings for Ships
+model TierRating {
+  id           String @id @default(cuid())
+  gameMode     String // "campaign_mob", "campaign_boss", "pvp", "operation_siren", etc.
+  tier         String // "EX", "T0", "T1", "T2", "T3", "T4"
+  reasoning    String?
+  
+  ship         Ship   @relation(fields: [shipId], references: [id])
+  shipId       String
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  @@unique([shipId, gameMode])
+}
+
+// Tier Ratings for Equipment
+model EquipmentTierRating {
+  id           String @id @default(cuid())
+  gameMode     String
+  tier         String
+  reasoning    String?
+  
+  equipment    Equipment @relation(fields: [equipmentId], references: [id])
+  equipmentId  String
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  @@unique([equipmentId, gameMode])
+}
+
+// Build Recommendations
+model BuildRecommendation {
+  id           String @id @default(cuid())
+  gameMode     String
+  position     String // "vanguard", "main_fleet"
+  priority     String // "priority", "alternative", "budget"
+  
+  mainGun      String?
+  secondaryGun String?
+  antiAir      String?
+  auxiliary1   String?
+  auxiliary2   String?
+  torpedo      String?
+  fighter      String?
+  diveBomber   String?
+  torpedoBomber String?
+  
+  reasoning    String?
+  
+  ship         Ship   @relation(fields: [shipId], references: [id])
+  shipId       String
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Campaign System
+model Campaign {
+  id           String @id @default(cuid())
+  chapter      String
+  name         String
+  difficulty   String // "Normal", "Hard"
+  
+  nodes        CampaignNode[]
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model CampaignNode {
+  id           String @id @default(cuid())
+  nodeId       String
+  nodeType     String // "battle", "boss", "treasure", "ambush"
+  
+  // Requirements
+  fleetPower   Int?
+  oilCost      Int
+  
+  // Drops
+  shipDrops    Json[]  // Ship drop data with rates
+  equipmentDrops Json[] // Equipment drop data with rates
+  blueprintDrops Json[] // Blueprint drops
+  
+  // Rewards
+  expReward    Int
+  goldReward   Int
+  
+  campaign     Campaign @relation(fields: [campaignId], references: [id])
+  campaignId   String
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Research Projects
+model ResearchProject {
+  id           String @id @default(cuid())
+  name         String
+  series       String // "PR1", "PR2", "PR3", etc.
+  shipName     String?
+  
+  // Requirements
+  requirements Json   // Complex requirements structure
+  
+  // Rewards  
+  rewards      Json   // Reward structure
+  
+  // Progression
+  phases       Json[] // Multi-phase research data
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Events
+model Event {
+  id           String @id @default(cuid())
+  name         String
+  type         String // "major", "mini", "rerun", "collab"
+  
+  startDate    DateTime?
+  endDate      DateTime?
+  
+  // Event-specific data
+  rewards      Json[]
+  stages       Json[]
+  
+  // Status
+  isActive     Boolean @default(false)
+  isRerun      Boolean @default(false)
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Skins
+model Skin {
+  id           String @id @default(cuid())
+  name         String
+  category     String // "Default", "Oath", "Retrofit", "Event", etc.
+  
+  // Acquisition
+  cost         Int?
+  currency     String? // "gems", "tokens", etc.
+  availability String? // "permanent", "limited", "event"
+  
+  // Assets
+  imageUrl     String?
+  liveWallpaper String?
+  
+  ship         Ship   @relation(fields: [shipId], references: [id])
+  shipId       String
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Voice Lines
+model VoiceLine {
+  id           String @id @default(cuid())
+  trigger      String // "Main Screen", "Touch", "Mission", etc.
+  text         String
+  audioUrl     String?
+  
+  ship         Ship   @relation(fields: [shipId], references: [id])
+  shipId       String
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Operation Siren
+model OpSirenZone {
+  id           String @id @default(cuid())
+  name         String
+  chapter      Int
+  difficulty   String
+  
+  // Zone data
+  enemies      Json[]
+  rewards      Json[]
+  specialNodes Json[]
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Guilds/Communities
+model Guild {
+  id           String @id @default(cuid())
+  name         String
+  level        Int
+  memberCount  Int
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// User System (for community features)
+model User {
+  id           String @id @default(cuid())
+  username     String @unique
+  email        String @unique
+  
+  // Game Progress
+  playerLevel  Int?
+  admiraltyLevel Int?
+  
+  // Preferences
+  preferences  Json?
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
