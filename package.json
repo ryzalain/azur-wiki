@@ -1,12 +1,35 @@
 {
   "name": "azur-lane-wiki",
   "version": "0.1.0",
+  "description": "A modern, comprehensive wiki for Azur Lane featuring ships, equipment, tier lists, and strategic guides",
+  "keywords": ["azur-lane", "wiki", "gaming", "nextjs", "typescript", "tailwindcss"],
+  "author": "Azur Lane Community",
+  "license": "MIT",
+  "homepage": "https://github.com/ryzalain/azur-wiki#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ryzalain/azur-wiki.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ryzalain/azur-wiki/issues"
+  },
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "type-check": "tsc --noEmit",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@prisma/client": "^6.16.2",
